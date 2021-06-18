@@ -25,10 +25,11 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glBegin(GL_TRIANGLES);
+        glBegin(GL_POLYGON);
         glVertex2f(-0.5f, 0.5f);
         glVertex2f(0.0f,   0.5f);
         glVertex2f(0.5f,  -0.5f);
+        glVertex2f(-0.6, -0.6);
         glEnd();      
                       
         /* Swap front and back buffers */
