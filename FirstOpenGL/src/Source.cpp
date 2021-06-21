@@ -175,6 +175,10 @@ int main(void){
 
     unsigned int shader = CreateShader(shaderSource.vertex, shaderSource.fragment);
     GLCall(glUseProgram(shader));
+    GLCall(int location = glGetUniformLocation(shader, "u_Color")); 
+    ASSERT(location != -1);
+    float r = 0.0f;
+    float incr = 0.05f;
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -185,6 +189,15 @@ int main(void){
         //Draw call
         
         //glDrawArrays(GL_TRIANGLES, 0, 3);
+        if (r > 1.0f) {
+            incr = -0.0005f;
+        }
+        else if (r < 0.0f) {
+            incr = 0.0005f;
+        }
+        r += incr;
+
+        GLCall(glUniform4f(location, r, 0.3f, 0.8f, 1.0f));
         GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 
         /* Swap front and back buffers */
