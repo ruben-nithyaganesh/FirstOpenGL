@@ -4,27 +4,9 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-
-
-#define ASSERT(x) if(!(x)) __debugbreak(); 
-
-#define GLCall(x) GLClearError();\
-                  x;\
-                  ASSERT(GLCheckError(#x, __FILE__, __LINE__))
-
-static void GLClearError() {
-    while (glGetError() != GL_NO_ERROR);
-}
-
-static bool GLCheckError(const char* function, const char* file, int line) {
-    while (GLenum error = glGetError()) {
-        std::cout << "OpenGL error: " << std::hex << error << " " << std::endl;
-        std::cout << "Function:     " << function << std::endl;
-        std::cout << "File:         " << file << " on line " << std::dec << line << std::endl;
-        return false;
-    }
-    return true;
-}
+#include "Renderer.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 struct ProgramShaderSource {
     std::string vertex;
@@ -107,8 +89,6 @@ void initVertexBuffer(const float* positions, unsigned int size) {
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
     GLCall(glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), positions, GL_STATIC_DRAW));
 
-    GLCall(glEnableVertexAttribArray(0));
-    GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0));
 }
 
 
@@ -118,6 +98,11 @@ int main(void){
     /* Initialize the library */
     if (!glfwInit())
         return -1;
+
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
@@ -129,6 +114,8 @@ int main(void){
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
+
+    glfwSwapInterval(1);
 
     if (glewInit() != GLEW_OK) {
         std::cout << "glewInit() failed" << std::endl;
@@ -149,6 +136,10 @@ int main(void){
         2, 3, 0
     };
 
+    unsigned int vao;
+    GLCall(glGenVertexArrays(1, &vao));
+    GLCall(glBindVertexArray(vao));
+
     float positions2[] = {
         -0.5f, -0.5f,
         -0.5f, 0.5f,
@@ -156,20 +147,16 @@ int main(void){
     };
 
 
-    initVertexBuffer(positions1, sizeof(positions1) / sizeof(float));
+    //initVertexBuffer(positions1, sizeof(positions1) / sizeof(float));
 
-
-    //Index Buffer
-    //'buffer' is the ID of the generated buffer
-    unsigned int ibo;
-    GLCall(glGenBuffers(1, &ibo));
-    //bindBuffer specifies buffer to be drawn
-    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
-    GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), ibuff, GL_STATIC_DRAW));
+    VertexBuffer vb(positions1, 4 * 2 * sizeof(float));
 
     GLCall(glEnableVertexAttribArray(0));
     GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0));
 
+
+    //Index Buffer
+    IndexBuffer ib(ibuff, 6);
 
     ProgramShaderSource shaderSource = ParseProgramShader("resources/shaders/basic.shader");
 
@@ -179,6 +166,13 @@ int main(void){
     ASSERT(location != -1);
     float r = 0.0f;
     float incr = 0.05f;
+
+
+    
+    GLCall(glBindVertexArray(0));
+    GLCall(glUseProgram(0));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -190,14 +184,19 @@ int main(void){
         
         //glDrawArrays(GL_TRIANGLES, 0, 3);
         if (r > 1.0f) {
-            incr = -0.0005f;
+            incr = -0.005f;
         }
         else if (r < 0.0f) {
-            incr = 0.0005f;
+            incr = 0.005f;
         }
         r += incr;
-
+        
+        GLCall(glUseProgram(shader));
         GLCall(glUniform4f(location, r, 0.3f, 0.8f, 1.0f));
+        
+        GLCall(glBindVertexArray(vao));
+        ib.Bind();  
+
         GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 
         /* Swap front and back buffers */
