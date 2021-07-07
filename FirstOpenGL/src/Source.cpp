@@ -8,20 +8,11 @@
 
 #include "Renderer.h"
 #include "VertexBuffer.h"
+#include "VertexBufferLayout.h"
 #include "IndexBuffer.h"
 #include "VertexArray.h"
 #include "Shader.h"
-
-
-void initVertexBuffer(const float* positions, unsigned int size) {
-    //'buffer' is the ID of the generated buffer
-    unsigned int buffer;
-    GLCall(glGenBuffers(1, &buffer));
-    //bindBuffer specifies buffer to be drawn
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
-    GLCall(glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), positions, GL_STATIC_DRAW));
-
-}
+#include "Texture.h"
 
 int main(void){
     GLFWwindow* window;
@@ -56,10 +47,10 @@ int main(void){
     
 
     float positions1[] = {
-         -0.5f, -0.5f,
-         0.5f, -0.5f,
-         0.5f, 0.5f,
-         -0.5f, 0.5f
+         -0.5f, -0.5f, 0.0f, 0.0f,
+         0.5f, -0.5f, 1.0f, 0.0f,
+         0.5f, 0.5f, 1.0f, 1.0f,
+         -0.5f, 0.5f, 0.0f, 1.0f
     };
 
     unsigned int ibuff[6] = {
@@ -67,10 +58,14 @@ int main(void){
         2, 3, 0
     };
 
+    GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+    GLCall(glEnable(GL_BLEND));
+
     VertexArray va;
-    VertexBuffer vb(positions1, 4 * 2 * sizeof(float));
+    VertexBuffer vb(positions1, 4 * 4 * sizeof(float));
     VertexBufferLayout layout;
 
+    layout.Push<float>(2);
     layout.Push<float>(2);
     va.AddBuffer(vb, layout);
 
@@ -82,17 +77,24 @@ int main(void){
     float r = 0.0f;
     float incr = 0.05f;
     shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
+
+
+    Texture texture("resources/textures/viper.png");
+    texture.Bind(0);
+
+    shader.SetUniform1i("u_Texture", 0);
     
     va.Unbind();
     shader.Unbind();
     vb.Unbind();
     ib.Unbind();
 
+    Renderer renderer;
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
+        renderer.Clear();
         
         //Draw call
         
@@ -108,10 +110,7 @@ int main(void){
         shader.Bind();
         shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
         
-        va.Bind();
-        ib.Bind();  
-
-        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+        renderer.Draw(va, ib, shader);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
