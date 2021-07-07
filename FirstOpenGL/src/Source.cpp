@@ -50,10 +50,10 @@ int main(void){
     
 
     float positions1[] = {
-         -0.5f, -0.5f, 0.0f, 0.0f,
-         0.5f, -0.5f, 1.0f, 0.0f,
-         0.5f, 0.5f, 1.0f, 1.0f,
-         -0.5f, 0.5f, 0.0f, 1.0f
+         20.0f, 20.0f, 0.0f, 0.0f,
+         320.0f, 20.0f, 1.0f, 0.0f,
+         320.0f, 220.0f, 1.0f, 1.0f,
+         20.0f, 220.0f, 0.0f, 1.0f
     };
 
     unsigned int ibuff[6] = {
@@ -74,14 +74,18 @@ int main(void){
 
     IndexBuffer ib(ibuff, 6);
         
-    glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.125f, 1.125f, -1.0f, 1.0f);
+    glm::mat4 proj = glm::ortho(0.0f, 640.0f, 0.0f, 480.0f, -1.0f, 1.0f);
+    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(200, 200, 0));
+
+    glm::mat4 mvp = proj * view * model; 
 
     Shader shader("resources/shaders/basic.shader");
     shader.Bind();
     float r = 0.0f;
     float incr = 0.05f;
     shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
-    shader.SetUniformMat4f("u_MVP", proj);
+    shader.SetUniformMat4f("u_MVP", mvp);
 
 
     Texture texture("resources/textures/viper.png");
